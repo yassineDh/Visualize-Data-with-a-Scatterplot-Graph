@@ -1,17 +1,29 @@
-html, body {
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    border: 0;
-    outline: 0;
-  }
-  
-  body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  border: 0;
+  outline: 0;
+}
 
-  .dot{
-   fill: blue;
-  }
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dot {
+  fill: blue;
+}
+
+#tooltip {
+  position: absolute;
+  background-color: white;
+  border: solid;
+  border-width: 1px;
+  border-radius: 5px;
+  padding: 10px;
+  width: 120px;
+  height: 40px;
+}

@@ -1,8 +1,11 @@
+//Good
 let w = 1100;
 let h = 700;
 
+//Good
 let svg = d3.select("body").append("svg").attr("width", w).attr("height", h);
 
+//Good
 svg
   .append("text")
   .attr("x", w / 5)
@@ -11,13 +14,21 @@ svg
   .style("font-size", 40)
   .text("Doping in Professional Bicycle Racing");
 
+//Good
 svg
   .append("text")
   .attr("x", w / 3)
   .attr("y", 65)
-  .attr("id", "subtitle")
+  .attr("id", "legend")
   .style("font-size", 22)
   .text("35 Fastest times up Alpe d'Huez");
+
+//Good
+let Tooltip = d3
+  .select("body")
+  .append("div")
+  .attr("id", "tooltip")
+  .style("opacity", 0);
 
 function secondsToms(d) {
   let arr = new String(d).split(" ");
@@ -28,9 +39,10 @@ function secondsToms(d) {
   if (m < 10) m = "0" + m;
   if (s < 10) s = "0" + s;
 
-  console.log(m + ":" + s);
   return m + ":" + s;
 }
+
+var timeFormat = d3.timeFormat("%M:%S");
 
 document.addEventListener("DOMContentLoaded", function () {
   fetch(
@@ -38,28 +50,34 @@ document.addEventListener("DOMContentLoaded", function () {
   )
     .then((response) => response.json())
     .then((vals) => {
+      vals.forEach(function (d) {
+        d.Place = +d.Place;
+        var parsedTime = d.Time.split(":");
+        d.Time = new Date(1970, 0, 1, 0, parsedTime[0], parsedTime[1]);
+      });
+
       let xScale = d3
-        .scaleTime()
+        .scaleLinear()
         .domain([
-          new Date(d3.min(vals, (d) => d["Year"] - 1 + "")),
-          new Date(d3.max(vals, (d) => d["Year"] + 1 + "")),
+          d3.min(vals, (d) => d["Year"] - 1),
+          d3.max(vals, (d) => d["Year"] + 1),
         ])
         .range([50, w - 50]);
 
       let yScale = d3
         .scaleTime()
         .domain([
-          new Date(d3.max(vals, (d) => d["Seconds"] + "")),
-          new Date(d3.min(vals, (d) => d["Seconds"] + "")),
+          d3.min(vals, (d) => d["Time"]),
+          d3.max(vals, (d) => d["Time"]),
         ])
-        .range([h - 50, 50]);
+        .range([50, h - 50]);
 
-      let x_axis = d3.axisBottom().scale(xScale).ticks(10);
-      let y_axis = d3
-        .axisLeft()
-        .scale(yScale)
+      let x_axis = d3
+        .axisBottom()
+        .scale(xScale)
         .ticks(10)
-        .tickFormat((d) => secondsToms(d));
+        .tickFormat(d3.format("d"));
+      let y_axis = d3.axisLeft().scale(yScale).ticks(10).tickFormat(timeFormat);
       svg
         .append("g")
         .attr("transform", "translate(0," + (h - 50) + ")")
@@ -72,6 +90,27 @@ document.addEventListener("DOMContentLoaded", function () {
         .attr("id", "y-axis")
         .call(y_axis);
 
+      let mo = (d) => {
+        Tooltip.style("opacity", 1);
+      };
+
+      let mm = (d) => {
+        Tooltip.attr("data-year", d.path[0].dataset.xvalue);
+        Tooltip.html(
+          "Year : " +
+            d.path[0].dataset.xvalue +
+            "<br/>" +
+            "Minute : " +
+            d.path[0].dataset.yvalue
+        )
+          .style("left", d.pageX + 20 + "px")
+          .style("top", d.pageY + 20 + "px");
+      };
+
+      let ml = (d) => {
+        Tooltip.style("opacity", 0);
+      };
+
       svg
         .selectAll("circle")
         .data(vals)
@@ -79,9 +118,12 @@ document.addEventListener("DOMContentLoaded", function () {
         .append("circle")
         .attr("class", "dot")
         .attr("r", 6)
-        .attr("cx", (d) => xScale(new Date(d["Year"] + "")))
-        .attr("cy", (d) => yScale(new Date(d["Seconds"] + "")))
-        .attr("data-xvalue", (d) => d["Year"])
-        .attr("data-yvalue", (d) => d["Time"]);
+        .attr("cx", (d) => xScale(d["Year"]))
+        .attr("cy", (d) => yScale(d["Time"]))
+        .attr("data-xvalue", (d) => d["Year"] + "")
+        .attr("data-yvalue", (d) => d.Time.toISOString())
+        .on("mouseover", mo)
+        .on("mousemove", mm)
+        .on("mouseleave", ml);
     });
 });
